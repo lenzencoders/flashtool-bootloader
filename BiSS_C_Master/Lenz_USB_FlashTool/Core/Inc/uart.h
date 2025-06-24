@@ -9,6 +9,7 @@ extern "C" {
 
 #include "stdint.h"
 #include "main.h"
+#include "sys_cfg.h"
 
 /* END includes */
 
@@ -19,6 +20,17 @@ extern "C" {
 #define QUEUE_SIZE 	36U
 
 /* BEGIN exported types */
+
+typedef union{
+	uint8_t bytes[64];
+	struct {
+		uint32_t ProgramCRC32;
+		uint32_t ProgramDate;
+		uint32_t BootloaderCRC32;
+		uint32_t BootloaderDate;		
+		uint16_t ProgramLen:16;
+	};
+}UartBank1_t;
 
 typedef enum{
 	UART_STATE_IDLE,
@@ -36,6 +48,8 @@ typedef enum{
 typedef enum{
 	UART_COMMAND_STATE_STAY_BL = 0x00U,
 	UART_COMMAND_LOAD_2K = 0x01U,
+	UART_COMMAND_RUN_PROGRAM = 0x02U,
+	UART_COMMAND_WRITE_REG = 0x03U,
 }UART_Command_t;
 
 typedef struct {
@@ -48,17 +62,11 @@ typedef struct {
 
 extern UartTxStr_t UART_TX;
 
-//typedef struct{
-//	uint8_t len;
-//	uint16_t addr;
-//	UART_Command_t cmd;
-//	uint8_t data[HEX_DATA_LEN];
-//}CommandQueue_t;
-
 typedef enum{
 	UART_ERROR_NONE = 0x00,
 	UART_ERROR_CRC = 0x01U,
 	UART_ERROR_QUEUE_FULL = 0x02U,
+	UART_ERROR_SEQ_STAY_IN_BL_INCORRECT = 0x03U,
 	UART_ERROR_LEN_DATA_IS_ZERO = 0x06U,
 }UART_Error_t;
 
@@ -68,7 +76,6 @@ typedef enum{
 
 void UART_Config(void);
 void UART_StateMachine(void);
-void UART_StateMachine2(void);
 
 /* END functions prototypes */
 
