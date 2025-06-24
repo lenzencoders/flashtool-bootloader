@@ -62,10 +62,10 @@ extern "C" {
 #define APP_ADR									((uint32_t)0x08000000 + PROG_SHIFT)
 
 /* Sequence for bootloader activation */
-#define BOOT_TX									{0x06, 0xB1, 0x4E, 0xF9}	// 0x06B14EF9UL
-#define BOOT_TX_LEN							4U	// len(4)
 #define BOOT_RX									{0x05, 0x31, 0xF6, 0xB9}
-#define BOOT_RX_LEN							5U	// len(4) + crc(1)
+#define BOOT_RX_LEN							4U
+#define BOOT_TX									{0x06, 0xB1, 0x4E, 0xF9}
+#define BOOT_TX_LEN							4U
 #define RX_BUFFER_SIZE 					256U
 #define TX_BUFFER_SIZE					252U
 
@@ -105,7 +105,6 @@ void Error_Handler(void);
 void Init(void);
 void DeInit(void);
 
-void BootLoader(void);
 void StartProgram(uint32_t AppAddress);
 
 void Debug_Led_app_run(void);
