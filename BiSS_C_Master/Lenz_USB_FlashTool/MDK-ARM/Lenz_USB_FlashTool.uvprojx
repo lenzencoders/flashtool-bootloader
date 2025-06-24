@@ -415,16 +415,6 @@
               <FilePath>..\Core\Src\crc_calc.c</FilePath>
             </File>
             <File>
-              <FileName>init_peripherial.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\init_peripherial.c</FilePath>
-            </File>
-            <File>
-              <FileName>init_peripherial.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Core\Inc\init_peripherial.h</FilePath>
-            </File>
-            <File>
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\uart.c</FilePath>
@@ -433,6 +423,51 @@
               <FileName>uart.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Core\Inc\uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>init_peripherals.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\init_peripherals.h</FilePath>
+            </File>
+            <File>
+              <FileName>init_peripherals.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\init_peripherals.c</FilePath>
+            </File>
+            <File>
+              <FileName>flash.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\flash.h</FilePath>
+            </File>
+            <File>
+              <FileName>flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys_cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\sys_cfg.h</FilePath>
+            </File>
+            <File>
+              <FileName>tamp_access.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\tamp_access.h</FilePath>
+            </File>
+            <File>
+              <FileName>tamp_access.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\tamp_access.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\crc.h</FilePath>
+            </File>
+            <File>
+              <FileName>crc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\crc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -738,6 +773,16 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>stm32g4xx_ll_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32G4xx_HAL_Driver\Src\stm32g4xx_ll_rtc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32g4xx_ll_crc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32G4xx_HAL_Driver\Src\stm32g4xx_ll_crc.c</FilePath>
             </File>
           </Files>
         </Group>
