@@ -74,6 +74,7 @@ void Init(void)
 	DMA_Init();
 	LPUART1_UART_Init();
 	TIM7_Init();
+	CRC_Init();
 }
 
 void DeInit(void)
@@ -82,6 +83,7 @@ void DeInit(void)
 	DeInit_DMA();
 	DeInit_LPUART1();
 	DeInit_TIM7();
+	CRC_DeInit();
 }
 
 void StartProgram(uint32_t AppAddress)
@@ -115,7 +117,6 @@ void StartProgram(uint32_t AppAddress)
 
 	while(1);
 }
-
 
 /* BEGIN DEBUG only functions */
 
