@@ -29,11 +29,13 @@ void GPIO_Init(void);
 void DMA_Init(void);
 void LPUART1_UART_Init(void);
 void TIM7_Init(void);
+void CRC_Init(void);
 
 void DeInit_GPIO(void);
 void DeInit_DMA(void);
 void DeInit_LPUART1(void);
 void DeInit_TIM7(void);
+void CRC_DeInit(void);
 
 // void TIM7_IRQHandler(void);
 

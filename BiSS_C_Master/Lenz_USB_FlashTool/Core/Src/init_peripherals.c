@@ -1,5 +1,6 @@
 #include "init_peripherals.h"
 #include "main.h"
+#include "crc.h"
 
 
 void GPIO_Init(void)
@@ -255,4 +256,26 @@ void DeInit_TIM7(void)
 
   /* Disable TIM7 peripheral clock */
   LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_TIM7);
+}
+
+
+void CRC_Init(void)
+{
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_CRC);
+    LL_CRC_SetPolynomialCoef(CRC, LL_CRC_DEFAULT_CRC32_POLY);
+    LL_CRC_SetInitialData(CRC, 0xFFFFFFFF);
+    LL_CRC_SetInputDataReverseMode(CRC, LL_CRC_INDATA_REVERSE_NONE);
+    LL_CRC_SetOutputDataReverseMode(CRC, LL_CRC_OUTDATA_REVERSE_NONE);
+}
+
+void CRC_DeInit(void) 
+{
+    LL_CRC_ResetCRCCalculationUnit(CRC);
+    
+    LL_CRC_SetPolynomialCoef(CRC, LL_CRC_DEFAULT_CRC32_POLY);  // Reset to default polynomial
+    LL_CRC_SetInitialData(CRC, 0xFFFFFFFF);                    // Reset initial value
+    LL_CRC_SetInputDataReverseMode(CRC, LL_CRC_INDATA_REVERSE_NONE);  // No input reversal
+    LL_CRC_SetOutputDataReverseMode(CRC, LL_CRC_OUTDATA_REVERSE_NONE);  // No output reversal
+   
+    LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_CRC);
 }
