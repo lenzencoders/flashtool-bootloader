@@ -1,6 +1,7 @@
 #include "init_peripherals.h"
 #include "main.h"
 #include "crc.h"
+#include "tamp_access.h"
 
 
 void GPIO_Init(void)
@@ -177,7 +178,16 @@ void TIM7_Init(void)
 	LL_TIM_SetCounterMode(TIM7, LL_TIM_COUNTERMODE_UP);
 }
 
-void DeInit_GPIO(void)
+void TIM3_Init(void)
+{
+  // Configure TIM3 as 1MHz counter (1µs resolution)
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM3);
+  LL_TIM_SetPrescaler(TIM3, (SystemCoreClock/1000000) - 1);
+	LL_TIM_SetAutoReload(TIM3, 0xFFFF);
+	LL_TIM_SetCounterMode(TIM3, LL_TIM_COUNTERMODE_UP);
+}
+
+void GPIO_DeInit(void)
 {
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -205,7 +215,7 @@ void DeInit_GPIO(void)
   // LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_GPIOF); /* GPIOF not used in init */
 }
 
-void DeInit_DMA(void)
+void DMA_DeInit(void)
 {
   /* Disable DMA channels for LPUART1 */
   LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_1); /* RX */
@@ -224,7 +234,7 @@ void DeInit_DMA(void)
   LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_DMAMUX1);
 }
 
-void DeInit_LPUART1(void)
+void LPUART1_DeInit(void)
 {
   /* Disable LPUART1 */
   LL_LPUART_Disable(LPUART1);
@@ -242,7 +252,7 @@ void DeInit_LPUART1(void)
   LL_RCC_SetLPUARTClockSource(LL_RCC_LPUART1_CLKSOURCE_PCLK1);
 }
 
-void DeInit_TIM7(void)
+void TIM7_DeInit(void)
 {
   /* Disable TIM7 counter */
   LL_TIM_DisableCounter(TIM7);
@@ -258,24 +268,75 @@ void DeInit_TIM7(void)
   LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_TIM7);
 }
 
+void TIM3_DeInit(void)
+{
+  /* Disable TIM7 counter */
+  LL_TIM_DisableCounter(TIM3);
+
+  /* Disable TIM7 interrupt */
+  LL_TIM_DisableIT_UPDATE(TIM3);
+  NVIC_DisableIRQ(TIM3_IRQn);
+
+  /* Reset TIM7 configuration */
+  LL_TIM_DeInit(TIM3);
+
+  /* Disable TIM7 peripheral clock */
+  LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_TIM3);
+}
+
 
 void CRC_Init(void)
 {
-    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_CRC);
-    LL_CRC_SetPolynomialCoef(CRC, LL_CRC_DEFAULT_CRC32_POLY);
-    LL_CRC_SetInitialData(CRC, 0xFFFFFFFF);
-    LL_CRC_SetInputDataReverseMode(CRC, LL_CRC_INDATA_REVERSE_NONE);
-    LL_CRC_SetOutputDataReverseMode(CRC, LL_CRC_OUTDATA_REVERSE_NONE);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_CRC);
+	LL_CRC_SetPolynomialCoef(CRC, LL_CRC_DEFAULT_CRC32_POLY);
+	LL_CRC_SetInitialData(CRC, 0xFFFFFFFF);
+	LL_CRC_SetInputDataReverseMode(CRC, LL_CRC_INDATA_REVERSE_NONE);
+	LL_CRC_SetOutputDataReverseMode(CRC, LL_CRC_OUTDATA_REVERSE_NONE);
 }
 
 void CRC_DeInit(void) 
 {
-    LL_CRC_ResetCRCCalculationUnit(CRC);
-    
-    LL_CRC_SetPolynomialCoef(CRC, LL_CRC_DEFAULT_CRC32_POLY);  // Reset to default polynomial
-    LL_CRC_SetInitialData(CRC, 0xFFFFFFFF);                    // Reset initial value
-    LL_CRC_SetInputDataReverseMode(CRC, LL_CRC_INDATA_REVERSE_NONE);  // No input reversal
-    LL_CRC_SetOutputDataReverseMode(CRC, LL_CRC_OUTDATA_REVERSE_NONE);  // No output reversal
-   
-    LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_CRC);
+	LL_CRC_ResetCRCCalculationUnit(CRC);
+	
+	LL_CRC_SetPolynomialCoef(CRC, LL_CRC_DEFAULT_CRC32_POLY);  // Reset to default polynomial
+	LL_CRC_SetInitialData(CRC, 0xFFFFFFFF);                    // Reset initial value
+	LL_CRC_SetInputDataReverseMode(CRC, LL_CRC_INDATA_REVERSE_NONE);  // No input reversal
+	LL_CRC_SetOutputDataReverseMode(CRC, LL_CRC_OUTDATA_REVERSE_NONE);  // No output reversal
+ 
+	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_CRC);
+}
+
+void TAMP_Init(void) {
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_RTCAPB);
+
+	LL_RCC_EnableRTC();
+	LL_PWR_EnableBkUpAccess();
+	
+	LL_RTC_TAMPER_Disable(RTC, LL_RTC_TAMPER_1);
+	LL_RTC_TAMPER_SetFilterCount(RTC, LL_RTC_TAMPER_FILTER_4SAMPLE);
+  SET_BIT(TAMP->IER, TAMP_IER_TAMP1IE);
+	
+	LL_RTC_TAMPER_Enable(RTC, LL_RTC_TAMPER_1);
+	
+	NVIC_SetPriority(RTC_TAMP_LSECSS_IRQn, 1);
+	NVIC_EnableIRQ(RTC_TAMP_LSECSS_IRQn);
+}
+
+
+void TAMP_DeInit(void)
+{
+	CLEAR_BIT(TAMP->IER, TAMP_IER_TAMP1IE);
+	NVIC_DisableIRQ(RTC_TAMP_LSECSS_IRQn);
+	
+	LL_RTC_TAMPER_Disable(RTC, LL_RTC_TAMPER_1);
+	
+	WRITE_REG(TAMP->SCR, TAMP_SCR_CTAMP1F);
+ 
+	LL_RTC_TAMPER_SetFilterCount(RTC, LL_RTC_TAMPER_FILTER_DISABLE);
+	
+	LL_PWR_DisableBkUpAccess();
+	
+	LL_RCC_DisableRTC();
+	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_RTCAPB);
 }

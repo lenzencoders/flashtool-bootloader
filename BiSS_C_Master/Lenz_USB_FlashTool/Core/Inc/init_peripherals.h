@@ -9,6 +9,7 @@ extern "C" {
 	
 #define TIM_BOOT							TIM7
 #define BISS_Task_IRQHandler 	TIM7_IRQHandler
+#define TIM_LED								TIM3
 
 /* DMA FOR LPUART RX and TX */
 #define DMA_LPUART_RX 					DMA1, LL_DMA_CHANNEL_1
@@ -30,12 +31,16 @@ void DMA_Init(void);
 void LPUART1_UART_Init(void);
 void TIM7_Init(void);
 void CRC_Init(void);
+void TAMP_Init(void);
+void TIM3_Init(void);
 
-void DeInit_GPIO(void);
-void DeInit_DMA(void);
-void DeInit_LPUART1(void);
-void DeInit_TIM7(void);
+void GPIO_DeInit(void);
+void DMA_DeInit(void);
+void LPUART1_DeInit(void);
+void TIM7_DeInit(void);
 void CRC_DeInit(void);
+void TAMP_DeInit(void);
+void TIM3_DeInit(void);
 
 // void TIM7_IRQHandler(void);
 
