@@ -52,15 +52,6 @@ extern "C" {
 
 /* USER CODE BEGIN Private defines */
 
-/* BOOTLOADER ADR AND APP ADR */
-#define BOOTLOADER_ADR					((uint32_t)0x08000000)
-#define BOOTLOADER_VER_ADR			((uint32_t)0x08001DD4)
-#define BOOTLOADER_DATE_ADR			((uint32_t)0x08001DD8)
-#define BOOTLOADER_LENGTH				((uint32_t)0x1DDC)
-
-#define PROG_SHIFT							((uint32_t)0x2000)
-#define APP_ADR									((uint32_t)0x08000000 + PROG_SHIFT)
-
 /* Sequence for bootloader activation */
 #define BOOT_RX									{0x05, 0x31, 0xF6, 0xB9}
 #define BOOT_RX_LEN							4U
@@ -71,7 +62,11 @@ extern "C" {
 
 /* Timeout values */
 #define BOOT_WAIT_TIMEOUT    		100000UL /* 100ms */
-#define BOOT_GLOBAL_TIMEOUT  		5000000UL /* 8s */
+#define BOOT_GLOBAL_TIMEOUT  		5000000UL /* 0.5s */
+#define LED_TOGGLE_TIMEOUT			500000UL // 0.5s
+
+/* Firmware page size */
+#define PAGE_SIZE_BYTES 				2048U
 
 /* USER CODE END Private defines */
 
