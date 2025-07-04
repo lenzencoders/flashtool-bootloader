@@ -13,26 +13,27 @@
 extern "C" {
 #endif
 
-#define SERIAL_ADR				   (0x1FFF7000U) 			/* 0x1FFF 7000 - 0x1FFF 7400 */
-#define PRODDATE_ADR  	     (SERIAL_ADR + 4U)
-#define DEVID_H_ADR				   (SERIAL_ADR + 8U)	/*(0x080027C8U) //  TODO */
-#define DEVID_L_ADR  	    	 (DEVID_H_ADR + 4U) 
-#define BOOTLOADER_BASE_ADR  0x08000000U
-#define BOOTLOADER_VER_ADR   0x080027D4U 	/* 0x08001FD4U */
-#define BOOTLOADER_DATE_ADR  0x080027D8U 	/* 0x08001FD8U */
-#define BOOTLOADER_LENGTH		 0x27DCU
-#define BOOTLOADER_CRC32_ADR 0x080027DCU 	/* 0x08001FDCU */
-#define KEY_ADR							 0x080027E0U
-#define KEY_LENGTH           8 						/*0x1AU x 32bit*/
+#define MEMORY_BASE_SHIFT							0x2000U
+#define MEMORY_BASE_ADR               (0x08000000U + MEMORY_BASE_SHIFT)          
+#define INFO_PAGE_NUM									4U
 
-#define PROG_SHIFT				   0x2A00U /* 0x2A00U */
-#define PROGRAM_ADR     		 (0x08000000U + PROG_SHIFT)
+#define PROG_SHIFT                    0x2800U
+#define PROGRAM_ADR                   (0x08000000U + PROG_SHIFT)
 
-#define PROGRAM_CRC32_ADR 	(PROGRAM_ADR - 16U)
-#define PROGRAM_LENGTH_ADR	(PROGRAM_ADR - 12U)
-#define MEMORY_BASE_ADR			(PROGRAM_ADR - 12U)
-#define PROGRAM_VER_ADR 		(PROGRAM_ADR - 10U)
-#define PROGRAM_DATE_ADR 		(PROGRAM_ADR - 4U)
+/* Program section offsets */
+#define PROGRAM_CRC32_ADR             (MEMORY_BASE_ADR + 0U)     // uint32_t ProgramCRC32 (offset 0)
+#define PROGRAM_DATE_ADR              (MEMORY_BASE_ADR + 4U)     // uint32_t ProgramDate (offset 4)
+#define PROGRAM_VER_ADR               (MEMORY_BASE_ADR + 8U)     // uint32_t ProgramVersion (offset 8)
+#define PROGRAM_LENGTH_ADR            (MEMORY_BASE_ADR + 12U)    // uint16_t ProgramLen:8 (offset 12, 2 bytes)
+
+/* Bootloader section offsets */
+#define BOOTLOADER_CRC32_ADR          (MEMORY_BASE_ADR + 16U)    // uint32_t BootloaderCRC32 (offset 16)
+#define BOOTLOADER_DATE_ADR           (MEMORY_BASE_ADR + 20U)    // uint32_t BootloaderDate (offset 20)
+#define BOOTLOADER_VER_ADR            (MEMORY_BASE_ADR + 24U)    // uint32_t BootloaderVersion (offset 24)
+#define BOOTLOADER_LENGTH_ADR         (MEMORY_BASE_ADR + 28U)    // uint16_t BootloaderLen:8 (offset 28, 2 bytes)
+
+#define PROGRAM_CURPAGE_CRC_ADR       (MEMORY_BASE_ADR + 32U)    // uint32_t ProgramCurrentPageCRC32 (offset 32)
+#define BOOTLOADER_CURPAGE_CRC_ADR    (MEMORY_BASE_ADR + 36U)    // uint32_t BootloaderCurrentPageCRC32 (offset 36)      
 
 #ifdef __cplusplus
 }

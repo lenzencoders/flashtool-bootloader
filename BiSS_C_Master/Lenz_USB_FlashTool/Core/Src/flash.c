@@ -130,7 +130,7 @@ void FlashSetRDP(void){
 
 void FlashWriteKey(uint32_t Address, uint32_t Key1, uint32_t Key2) {
     FlashUnlock();
-    SET_BIT(FLASH->CR, FLASH_CR_PG);    
+    SET_BIT(FLASH->CR, FLASH_CR_PG);
     FlashWait();
     *(__IO uint32_t*)Address = Key1;
     FlashWait();

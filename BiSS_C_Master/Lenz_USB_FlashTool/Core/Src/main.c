@@ -74,16 +74,20 @@ void Init(void)
 	DMA_Init();
 	LPUART1_UART_Init();
 	TIM7_Init();
+	TIM3_Init();
 	CRC_Init();
+	TAMP_Init();
 }
 
 void DeInit(void)
 {
-	DeInit_GPIO();
-	DeInit_DMA();
-	DeInit_LPUART1();
-	DeInit_TIM7();
+	GPIO_DeInit();
+	DMA_DeInit();
+	LPUART1_DeInit();
+	TIM7_DeInit();
+	TIM3_DeInit();
 	CRC_DeInit();
+	TAMP_DeInit();
 }
 
 void StartProgram(uint32_t AppAddress)
