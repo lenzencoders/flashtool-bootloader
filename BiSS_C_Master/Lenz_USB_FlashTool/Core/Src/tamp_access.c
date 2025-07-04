@@ -7,9 +7,6 @@
  */
 
 #include "tamp_access.h"
-#include "stm32g4xx_ll_rtc.h"
-#include "stm32g4xx_ll_pwr.h"
-
 
 #define TAMP_FLAGS_REGISTER          LL_RTC_BKP_DR0
 #define TAMP_COUNTER_REGISTER        LL_RTC_BKP_DR1

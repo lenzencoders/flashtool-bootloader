@@ -14,6 +14,8 @@ extern "C" {
 #endif
 
 #include "stm32g4xx.h"
+#include "stm32g4xx_ll_rtc.h"
+#include "stm32g4xx_ll_pwr.h"
 
 
 #define TAMP_FLAGS_STAY_BL_Pos					0U
