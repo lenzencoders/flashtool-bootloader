@@ -69,76 +69,6 @@ void Load_2K(uint8_t laoding, uint8_t page_number, uint8_t *cmd_data, uint8_t cm
 
 /* END Init function prototypes */
 
-
-void UART_StateMachine(void)
-{
-	/* Enable DMA requests for LPUART1 */
-  LL_LPUART_EnableDMAReq_RX(UART_BL);
-  LL_LPUART_EnableDMAReq_TX(UART_BL);
-	
-	uint32_t start_counter = LL_TIM_GetCounter(TIM_BOOT);
-	
-	if (CheckRDPOptBbyte() == RDP_AA){
-		SetTampFlag(TAMP_FLAGS_RDP_AA);
-//		SetErrorFlag(FLAGS_RDP_AA);
-	}
-	
-	while(1)
-	{
-		if(flag_stay_bl){
-			current_counter = LL_TIM_GetCounter(TIM_BOOT);
-			if (current_counter < start_counter) {
-				overflow_count++;
-			}
-//			elapsed_global = overflow_count * timer_period_us + Get_Elapsed_Time(current_counter, start_counter);
-			elapsed_global = (overflow_count << 16) + Get_Elapsed_Time(current_counter, start_counter);
-		}
-		
-		switch (UART_State) {
-
-			case UART_STATE_IDLE:
-				if(New_Data_Available() == 1){
-					UART_State = UART_STATE_RECEIVE;
-				} else if (New_Data_Available() == 2){
-					UART_State = UART_STATE_RUNCMD;
-				}
-				break;
-
-			case UART_STATE_RECEIVE:
-				if(Validate_Packet()){
-					UART_State = UART_STATE_RUNCMD;
-				} else {
-					UART_State = UART_STATE_ABORT;
-				}
-				break;
-
-			case UART_STATE_RUNCMD:
-				Execute_Command();
-				UART_State = UART_STATE_IDLE;
-				break;
-
-			case UART_STATE_SEND:
-				UART_State = UART_STATE_IDLE;
-				break;
-
-			case UART_STATE_ABORT:
-				Handle_UART_Error();
-				UART_State = UART_STATE_IDLE;
-				break;
-		}
-		
-		if (flag_stay_bl){
-			start_counter = current_counter;
-
-			if (elapsed_global >= BOOT_GLOBAL_TIMEOUT) {
-				Debug_Led_app_run();
-				DeInit();
-				StartProgram(APP_ADR);
-			}
-		}
-	}
-}
-
 void UART_Config(void)
 {
 	LL_DMA_DisableChannel(DMA_LPUART_RX);
@@ -401,30 +331,93 @@ void Load_2K(uint8_t fill_page, uint8_t page_number, uint8_t *cmd_data, uint8_t 
 			}
 			
 			current_flash_ptr += num_words;
-		}
-		else{
-			Data_CRC32 = CRC32_Calc();
-			if(Data_CRC32 == BissBank2.FlashPageCRC32) {
-				FlashWritePage(page_number);
-				BissSetCommandState(BISS_COMMANDSTATE_FLASH_FW_CRC_OK);
-			}
-			else {
-				UART_State = UART_STATE_ABORT;
-				UART_Error = UART_ERROR_CRC;
-			}
-			
-			
-			
-			memset(*GetFlashPtr(), 0, PAGE_WORD_SIZE*sizeof(uint32_t));
-			current_flash_ptr = NULL;
-		}
-	}
-  else {
-		UART_State = UART_STATE_ABORT;
-		UART_Error = UART_ERROR_CRC;
+void UART_StateMachine(void)
+{
+	/* Enable DMA requests for LPUART1 */
+  LL_LPUART_EnableDMAReq_RX(UART_BL);
+  LL_LPUART_EnableDMAReq_TX(UART_BL);
+	
+	uint32_t start_counter = 0;
+	uint32_t start_led_counter = LL_TIM_GetCounter(TIM_LED);
+	uint8_t led_state = 0;
 		
-		memset(*GetFlashPtr(), 0, PAGE_WORD_SIZE*sizeof(uint32_t));
-		current_flash_ptr = NULL;
+	if (GetTampFlag(TAMP_FLAGS_STAY_BL)) {
+		flag_transition_to_fw = 0;
+		// Debug_Led_boot_run();
+		ClearTampFlag(TAMP_FLAGS_STAY_BL);
 	}
-	return;
+	else{
+		start_counter = LL_TIM_GetCounter(TIM_BOOT);
+	}
+	
+	if (CheckRDPOptBbyte() == RDP_AA) {
+		SetTampFlag(TAMP_FLAGS_RDP_AA);
+	}
+	
+	while(1)
+	{
+		current_led_counter = LL_TIM_GetCounter(TIM_LED);
+		if(current_led_counter < start_led_counter){
+			overflow_led_count++;
+		}
+		elapsed_led_global = (overflow_led_count << 16) + Get_Elapsed_Time(current_led_counter, start_led_counter);
+		
+		start_led_counter = current_led_counter;
+		if(elapsed_led_global >= LED_TOGGLE_TIMEOUT) {
+			elapsed_led_global = 0;
+			overflow_led_count = 0;
+			led_state ^= 1;
+      ToggleLEDs(led_state);
+		}
+		
+		if(flag_transition_to_fw){
+			current_counter = LL_TIM_GetCounter(TIM_BOOT);
+			if (current_counter < start_counter) {
+				overflow_count++;
+			}
+			elapsed_global = (overflow_count << 16) + Get_Elapsed_Time(current_counter, start_counter);
+		}
+		
+		switch (UART_State) {
+			case UART_STATE_IDLE:
+				if(New_Data_Available() == 1) {
+					UART_State = UART_STATE_RECEIVE;
+				} else if (New_Data_Available() == 2) {
+					UART_State = UART_STATE_RUNCMD;
+				}
+				break;
+
+			case UART_STATE_RECEIVE:
+				if(Validate_Packet()) {
+					UART_State = UART_STATE_RUNCMD;
+				} else {
+					UART_State = UART_STATE_ABORT;
+				}
+				break;
+
+			case UART_STATE_RUNCMD:
+				Execute_Command();
+				UART_State = UART_STATE_IDLE;
+				break;
+
+			case UART_STATE_SEND:
+				UART_State = UART_STATE_IDLE;
+				break;
+
+			case UART_STATE_ABORT:
+				Handle_UART_Error();
+				UART_State = UART_STATE_IDLE;
+				break;
+		}
+		
+		if (flag_transition_to_fw) {
+			start_counter = current_counter;
+
+			if (elapsed_global >= BOOT_GLOBAL_TIMEOUT) {
+				// Debug_Led_app_run();
+				DeInit();
+				StartProgram(PROGRAM_ADR);
+			}
+		}
+	}
 }
