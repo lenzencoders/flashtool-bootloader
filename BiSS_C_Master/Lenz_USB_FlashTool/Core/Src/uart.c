@@ -347,29 +347,42 @@ uint32_t Get_Elapsed_Time(uint32_t current, uint32_t previous)
                                : (((timer_period_us - 1) - previous) + current + 1);
 }
 
-void Load_2K(uint8_t fill_page, uint8_t page_number, uint8_t *cmd_data, uint8_t cmd_data_len)
+void Load_2K(uint8_t page_number, uint8_t *cmd_data, uint8_t cmd_data_len)
 {
-	if((page_number > 3) && (page_number < 64)){
-		if(fill_page)
-		{	
-			if(current_flash_ptr == NULL) {
-				current_flash_ptr = (uint32_t*)GetFlashPtr();
-				memset(*GetFlashPtr(), 0, PAGE_WORD_SIZE*sizeof(uint32_t));
-			}
-			
-			uint16_t num_words = cmd_data_len / 4;
-			uint8_t remaining_bytes = cmd_data_len % 4;
-			
-			for (uint16_t i = 0; i < num_words; i++) 
-			{
-				current_flash_ptr[i] = (uint32_t)cmd_data[i*4]        | 
-															((uint32_t)cmd_data[i*4 + 1] << 8)  |
-															((uint32_t)cmd_data[i*4 + 2] << 16) |
-															((uint32_t)cmd_data[i*4 + 3] << 24);
-			}
-			
-			if (remaining_bytes > 0) 
-			{
+    if((page_number > 3) && (page_number < 64))
+    {
+        if(current_flash_ptr == NULL) {
+					current_flash_ptr = (uint32_t*)GetFlashPtr();
+					memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+					bytes_filled = 0;
+        }
+        
+				if(UART_Error != UART_ERROR_NONE) {
+					current_flash_ptr = (uint32_t*)GetFlashPtr();
+					memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+					bytes_filled = 0;					
+				}
+        
+        if((bytes_filled + cmd_data_len) > PAGE_SIZE_BYTES) {
+					UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_NULL);
+					return;
+        }
+        
+        uint16_t num_words = cmd_data_len / 4;
+        uint8_t remaining_bytes = cmd_data_len % 4;
+        
+        
+        for (uint16_t i = 0; i < num_words; i++) 
+        {
+					current_flash_ptr[i] = (uint32_t)cmd_data[i*4]        | 
+															 ((uint32_t)cmd_data[i*4 + 1] << 8)  |
+															 ((uint32_t)cmd_data[i*4 + 2] << 16) |
+															 ((uint32_t)cmd_data[i*4 + 3] << 24);
+        }
+        
+        
+        if (remaining_bytes > 0) 
+        {
 					uint32_t last_word = 0;
 					for (uint8_t i = 0; i < remaining_bytes; i++) 
 					{
@@ -377,9 +390,53 @@ void Load_2K(uint8_t fill_page, uint8_t page_number, uint8_t *cmd_data, uint8_t 
 					}
 					current_flash_ptr[num_words] = last_word;
 					num_words++;
+        }
+        
+        current_flash_ptr += num_words;
+        bytes_filled += cmd_data_len;
+        
+        if(bytes_filled >= PAGE_SIZE_BYTES) 
+        {
+					Data_CRC32 = CRC32_Calc(*GetFlashPtr(), PAGE_SIZE_BYTES);
+					if(Data_CRC32 == UartBank1.ProgramCurrentPageCRC32) 
+					{
+						FlashWritePage(page_number);
+						UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_CRC_OK);
+						
+						if (page_number == INFO_PAGE_NUM) 
+						{
+								UartBank1.ProgramCRC32 = *(uint32_t *)PROGRAM_CRC32_ADR;
+								UartBank1.ProgramDate = *(uint32_t *)PROGRAM_DATE_ADR;
+								UartBank1.ProgramVersion = *(uint32_t *)PROGRAM_VER_ADR;
+								UartBank1.ProgramLen = *(uint32_t *)PROGRAM_LENGTH_ADR;
+								UartBank1.BootloaderCRC32 = *(uint32_t *)BOOTLOADER_CRC32_ADR;
+								UartBank1.BootloaderDate = *(uint32_t *)BOOTLOADER_DATE_ADR;
+								UartBank1.BootloaderVersion = *(uint32_t *)BOOTLOADER_VER_ADR;
+								UartBank1.BootloaderLen = *(uint32_t *)BOOTLOADER_LENGTH_ADR;
+						}
+					} 
+					else 
+					{
+						UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_CRC_FAULT);
+					}
+					
+					memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+					current_flash_ptr = NULL;
+					bytes_filled = 0;
 			}
-			
-			current_flash_ptr += num_words;
+    }
+    else 
+    {
+        UART_State = UART_STATE_ABORT;
+        UART_Error = UART_ERROR_CRC;
+        UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_NULL);
+        
+        memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+        current_flash_ptr = NULL;
+        bytes_filled = 0;
+    }
+}
+
 void UART_StateMachine(void)
 {
 	/* Enable DMA requests for LPUART1 */
