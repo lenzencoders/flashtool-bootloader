@@ -89,12 +89,25 @@ void UART_Config(void)
 	LL_TIM_SetCounter(TIM_BOOT, 0);
   LL_TIM_EnableCounter(TIM_BOOT);
 	// start_global_time_counter = LL_TIM_GetCounter(TIM_BOOT);
-	
+	/* Enable TIM3 counter */
+	LL_TIM_SetCounter(TIM_LED, 0);
+  LL_TIM_EnableCounter(TIM_LED);
+
+	// LED1 Turn Red
+	LL_GPIO_SetOutputPin(LED1_GREEN);
+	LL_GPIO_ResetOutputPin(LED1_RED);
+	// LED2 Turn Green
+	LL_GPIO_SetOutputPin(LED2_RED);
+	LL_GPIO_ResetOutputPin(LED2_GREEN);
+		
 	UartBank1.ProgramCRC32 = *(uint32_t *)PROGRAM_CRC32_ADR;
+	UartBank1.ProgramDate= *(uint32_t *)PROGRAM_DATE_ADR;
+	UartBank1.ProgramVersion = *(uint32_t *)PROGRAM_VER_ADR;
 	UartBank1.ProgramLen = *(uint32_t *)PROGRAM_LENGTH_ADR;
-	UartBank1.ProgramDate = *(uint32_t *)PROGRAM_DATE_ADR;
 	UartBank1.BootloaderCRC32 = *(uint32_t *)BOOTLOADER_CRC32_ADR;
 	UartBank1.BootloaderDate = *(uint32_t *)BOOTLOADER_DATE_ADR;
+	UartBank1.BootloaderVersion = *(uint32_t *)BOOTLOADER_VER_ADR;
+	UartBank1.BootloaderLen= *(uint32_t *)BOOTLOADER_LENGTH_ADR;
 }
 
 QUEUE_Status_t Enqueue_Command(UART_Command_t cmd, uint16_t addr, uint8_t len,	uint8_t *data)
