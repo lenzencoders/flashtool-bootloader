@@ -437,6 +437,39 @@ void Load_2K(uint8_t page_number, uint8_t *cmd_data, uint8_t cmd_data_len)
     }
 }
 
+uint32_t Calculate_Program_CRC(void) 
+{
+    const uint32_t *firmware_data = (const uint32_t*)PROGRAM_ADR;
+    
+    uint32_t firmware_size_bytes = PAGE_SIZE*UartBank1.ProgramLen;
+    
+    uint32_t crc = CRC32_Calc(firmware_data, firmware_size_bytes);
+    
+    return crc;
+}
+
+void WriteToReg(uint16_t cmd, uint8_t *cmd_data, uint8_t cmd_len)
+{
+
+}
+
+void Toggle_LEDs(uint8_t state) 
+{
+	if(state) {
+		// LED1: Green, LED2: Red
+		LL_GPIO_ResetOutputPin(LED1_RED);
+		LL_GPIO_SetOutputPin(LED1_GREEN);
+		LL_GPIO_SetOutputPin(LED2_RED);
+		LL_GPIO_ResetOutputPin(LED2_GREEN);
+	} else {
+		// LED1: Red, LED2: Green
+		LL_GPIO_SetOutputPin(LED1_RED);
+		LL_GPIO_ResetOutputPin(LED1_GREEN);
+		LL_GPIO_ResetOutputPin(LED2_RED);
+		LL_GPIO_SetOutputPin(LED2_GREEN);
+	}
+}
+
 void UART_StateMachine(void)
 {
 	/* Enable DMA requests for LPUART1 */
