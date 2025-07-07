@@ -248,40 +248,65 @@ void Execute_Command(void)
 				break;
 
 			case UART_COMMAND_LOAD_2K:
-				fill_page = (cmd_addr >> 8) & 0xFF; // start or stop fill FlashPage[PAGE_WORD_SIZE]
 				page_num = cmd_addr & 0xFF;  // page number
-				Load_2K(fill_page, page_num, cmd_data, cmd_data_len);
-				
-				UART_TX.cmd = UART_COMMAND_LOAD_2K;
-				UART_TX.len = cmd_data_len;
-				UART_TX.adr_h = 0; 
-				UART_TX.adr_l = 0;
-				
-				for(uint32_t i = 0; i < cmd_data_len; ++i){
-					UART_TX.Buf[i] = i+1;
-				}
-				
-				UART_Transmit(&UART_TX);
-				
+				Load_2K(page_num, cmd_data, cmd_data_len);
 				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
 				queue_cnt--;
 				retry_cnt = 0;
 				break;
 				
 			case UART_COMMAND_RUN_PROGRAM:
-
-				StartProgram(APP_ADR);
-				
+				DeInit();
+				StartProgram(PROGRAM_ADR);
 				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
 				queue_cnt--;
 				retry_cnt = 0;
 				break;
 			
 			case UART_COMMAND_WRITE_REG:
+				WriteToReg(cmd_addr, cmd_data, cmd_data_len);
+				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
+				queue_cnt--;
+				retry_cnt = 0;
+				break;
+			
+			case UART_COMMAND_CHECK_PROGRAM_CRC32:
+				Program_CRC32 = Calculate_Program_CRC();
+				if(Program_CRC32 != UartBank1.ProgramCRC32){
+					UartSetMemoryState(UART_MEMORYSTATE_FW_CHECK_CRC32_FAULT);
+				} else {
+					UartSetMemoryState(UART_MEMORYSTATE_IDLE);
+				}
+				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
+				queue_cnt--;
+				retry_cnt = 0;
+				break;
 				
+			case UART_COMMAND_PROGRAM_CURRENT_PAGE_CRC32:
+				if(cmd_data_len == 4) {
+					UartBank1.ProgramCurrentPageCRC32 = __REV(*(uint32_t*)cmd_data);
+				} else {
+					UART_State = UART_STATE_ABORT;
+				}
+				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
+				queue_cnt--;
+				retry_cnt = 0;
+				break;
+				
+			case UART_COMMAND_READ_MEMORYSTATE:
+				UART_TX.cmd = UART_COMMAND_READ_MEMORYSTATE;
+				UART_TX.len = cmd_data_len;
+				UART_TX.adr_h = 0; 
+				UART_TX.adr_l = 0;
+				UART_TX.Buf[0] = UartGetMemoryState();
+				UART_Transmit(&UART_TX);
+				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
+				queue_cnt--;
+				retry_cnt = 0;
 				break;
 		}
 	}
+	return ret;
 }
 
 void Handle_UART_Error(void)
