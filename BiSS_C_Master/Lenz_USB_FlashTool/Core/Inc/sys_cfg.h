@@ -13,12 +13,23 @@
 extern "C" {
 #endif
 
+#define SERIAL_ADR				   (0x1FFF7000U) 			/* 0x1FFF 7000 - 0x1FFF 7400 */
+#define PRODDATE_ADR  	     (SERIAL_ADR + 4U)
+#define DEVID_H_ADR				   (SERIAL_ADR + 8U)	/*(0x080027C8U) //  TODO */
+#define DEVID_L_ADR  	    	 (DEVID_H_ADR + 4U) 
+#define BOOTLOADER_BASE_ADR  0x08000000U
+#define BOOTLOADER_LENGTH		 0x27DCU
+#define KEY_ADR							 0x080027E0U
+#define KEY_LENGTH           8 						/*0x1AU x 32bit*/
+
+
 #define MEMORY_BASE_SHIFT							0x2000U
 #define MEMORY_BASE_ADR               (0x08000000U + MEMORY_BASE_SHIFT)          
 #define INFO_PAGE_NUM									4U
 
 #define PROG_SHIFT                    0x2800U
 #define PROGRAM_ADR                   (0x08000000U + PROG_SHIFT)
+#define PAGE_SIZE											0x800U
 
 /* Program section offsets */
 #define PROGRAM_CRC32_ADR             (MEMORY_BASE_ADR + 0U)     // uint32_t ProgramCRC32 (offset 0)
