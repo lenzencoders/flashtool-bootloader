@@ -11,9 +11,9 @@
 UART_State_t UART_State = UART_STATE_IDLE;
 UART_Error_t UART_Error = UART_ERROR_NONE;
 
-/* BEGIN private variables */
 volatile UartBank1_t UartBank1;
 
+/* BEGIN private variables */
 volatile uint32_t new_cnt = 0;
 volatile uint32_t dma_rx_cnt = 0;
 volatile uint8_t uart_length = 0;
@@ -21,9 +21,12 @@ volatile uint8_t bytes_received = 0;
 volatile uint32_t uart_expected_length = 0;
 
 volatile uint32_t current_counter = 0;
+volatile uint32_t current_led_counter = 0;
 const uint32_t timer_period_us = 65536; // TIM7 period (16-bit)
 volatile uint32_t elapsed_global = 0;
+volatile uint32_t elapsed_led_global = 0;
 uint32_t overflow_count = 0;
+uint32_t overflow_led_count = 0;
 
 static const uint8_t boot_rx[] = BOOT_RX; // Stay in bootloader seq
 static const uint8_t boot_tx[] = BOOT_TX; // Response seq to stay in bootloader
@@ -31,7 +34,7 @@ static const uint8_t boot_tx[] = BOOT_TX; // Response seq to stay in bootloader
 static uint32_t *current_flash_ptr = NULL;
 
 uint8_t flag_match_rx = 0;
-uint8_t flag_stay_bl = 1;
+uint8_t flag_transition_to_fw = 1;
 
 uint8_t queue_read_cnt = 0;
 uint8_t queue_write_cnt = 0;
@@ -42,10 +45,14 @@ volatile uint8_t usb_rx_buf[RX_BUFFER_SIZE] = {0};
 uint8_t usb_tx_buf[TX_BUFFER_SIZE] = {0};
 uint8_t hex_line_buffer[UART_LINE_SIZE] = {0};
 
+/* Load 2k */
+static uint32_t Data_CRC32 = 0;
+static uint32_t bytes_filled = 0;
+
 /* END private variables */
 
 /* BEGIN Private typedef*/
-typedef struct{
+typedef struct {
 	uint8_t len;
 	uint16_t addr;
 	UART_Command_t cmd;
@@ -54,18 +61,23 @@ typedef struct{
 
 CommandQueue_t CommandQueue[QUEUE_SIZE];
 UartTxStr_t UART_TX;
+MemoryState_t MemoryState;
 
 /* END Private typedef */
 
 /* BEGIN Init function prototypes */
+
 QUEUE_Status_t Enqueue_Command(UART_Command_t cmd, uint16_t addr, uint8_t len,	uint8_t *data);
 void UART_Transmit(UartTxStr_t *TxStr);
 uint8_t New_Data_Available(void);
 uint8_t Validate_Packet(void);
-void Execute_Command(void);
+UART_State_t Execute_Command(void);
 void Handle_UART_Error(void);
 uint32_t Get_Elapsed_Time(uint32_t current, uint32_t previous);
-void Load_2K(uint8_t laoding, uint8_t page_number, uint8_t *cmd_data, uint8_t cmd_data_len);
+void Load_2K(uint8_t page_number, uint8_t *cmd_data, uint8_t cmd_data_len);
+void WriteToReg(uint16_t cmd, uint8_t *cmd_data, uint8_t cmd_len);
+uint32_t Calculate_Program_CRC(void);
+void Toggle_LEDs(uint8_t state);
 
 /* END Init function prototypes */
 
@@ -112,7 +124,7 @@ void UART_Config(void)
 
 QUEUE_Status_t Enqueue_Command(UART_Command_t cmd, uint16_t addr, uint8_t len,	uint8_t *data)
 {
-	if (queue_cnt < QUEUE_SIZE){
+	if (queue_cnt < QUEUE_SIZE) {
 		CommandQueue[queue_read_cnt].cmd = cmd;
 		CommandQueue[queue_read_cnt].addr = addr;
 		CommandQueue[queue_read_cnt].len = len;
@@ -189,12 +201,15 @@ uint8_t Validate_Packet(void)
 				dma_rx_cnt = (dma_rx_cnt + uart_expected_length) % RX_BUFFER_SIZE;
 				return 1;
 			} else {
+				UART_State = UART_STATE_ABORT;
 				UART_Error = UART_ERROR_QUEUE_FULL;
 			}
 		} else {
+			UART_State = UART_STATE_ABORT;
 			UART_Error = UART_ERROR_CRC;
 		}
 	} else {
+		UART_State = UART_STATE_ABORT;
 		UART_Error = UART_ERROR_LEN_DATA_IS_ZERO;
 	}
 	dma_rx_cnt = (dma_rx_cnt + uart_expected_length) % RX_BUFFER_SIZE;
@@ -322,7 +337,7 @@ UART_State_t Execute_Command(void)
 
 void Handle_UART_Error(void)
 {
-	switch (UART_Error){
+	switch (UART_Error) {
 		case UART_ERROR_NONE:
 			UART_State = UART_STATE_IDLE;
 			break;
@@ -506,7 +521,7 @@ void UART_StateMachine(void)
 			elapsed_led_global = 0;
 			overflow_led_count = 0;
 			led_state ^= 1;
-      ToggleLEDs(led_state);
+      Toggle_LEDs(led_state);
 		}
 		
 		if(flag_transition_to_fw){
