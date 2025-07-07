@@ -201,19 +201,27 @@ uint8_t Validate_Packet(void)
 	return 0;
 }
 
-void Execute_Command(void)
+// BEGIN DEBUG
+volatile uint32_t Program_CRC32 = 0;
+// END DEBUG
+
+UART_State_t Execute_Command(void)
 {
-	if(queue_cnt > 0){
+	UART_State_t ret = UART_STATE_IDLE;
+	if(queue_cnt > 0) {
 		UART_Command_t command = CommandQueue[queue_read_cnt].cmd;
 		uint8_t cmd_data_len = CommandQueue[queue_read_cnt].len;
 		uint16_t cmd_addr = CommandQueue[queue_read_cnt].addr;
-		uint8_t *cmd_data = CommandQueue[queue_read_cnt].data;	
+		uint8_t *cmd_data = CommandQueue[queue_read_cnt].data;
+		
+		uint8_t page_num = 0;
+		uint32_t data_32 = 0; // UART_COMMAND_PROGRAM_CRC32
+		uint32_t crc_check = 0; // UART_COMMAND_PROGRAM_CRC32
+		// uint32_t Program_CRC32 = 0;
 
 		switch (command) {
-			uint8_t fill_page = 0;
-			uint8_t page_num = 0;
 			case UART_COMMAND_STATE_STAY_BL:
-				if(cmd_data_len == BOOT_RX_LEN){
+				if(cmd_data_len == BOOT_RX_LEN) {
 					for (uint8_t i = 0; i < cmd_data_len; i++)
 					{
 						if (cmd_data[i] == boot_rx[i])
@@ -223,8 +231,8 @@ void Execute_Command(void)
 						}
 					}
 				}
-				if(flag_match_rx){
-					Debug_Led_boot_run();
+				if(flag_match_rx) {
+					// Debug_Led_boot_run();
 					
 					UART_TX.cmd = UART_COMMAND_STATE_STAY_BL;
 					UART_TX.len = BOOT_TX_LEN;
@@ -238,8 +246,11 @@ void Execute_Command(void)
 
 					UART_Transmit(&UART_TX);
 					
-					flag_stay_bl = 0;
+					flag_transition_to_fw = 0;
 					flag_match_rx = 0;
+				} else {
+					UART_State = UART_STATE_ABORT;
+					UART_Error = UART_ERROR_SEQ_STAY_IN_BL_INCORRECT;
 				}
 				
 				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
