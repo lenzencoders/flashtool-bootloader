@@ -45,7 +45,7 @@ typedef union {
 		uint32_t BootloaderCurrentPageCRC32;
 		uint32_t BootloaderStartingAddress;
 	};
-}UartBank1_t;
+}UartBank_t;
 
 typedef enum {
 	UART_STATE_IDLE,
