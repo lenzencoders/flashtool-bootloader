@@ -64,9 +64,12 @@ extern "C" {
 #define BOOT_WAIT_TIMEOUT    		100000UL /* 100ms */
 #define BOOT_GLOBAL_TIMEOUT  		5000000UL /* 0.5s */
 #define LED_TOGGLE_TIMEOUT			500000UL // 0.5s
+#define LED_TOGGLE_UPLOAD_TIMEOUT 100000UL // 0.1s
 
 /* Firmware page size */
 #define PAGE_SIZE_BYTES 				2048U
+
+#define NUM_OF_RESETS_TO_STAY_IN_BL	5U
 
 /* USER CODE END Private defines */
 
@@ -99,11 +102,8 @@ void Error_Handler(void);
 
 void Init(void);
 void DeInit(void);
-
 void StartProgram(uint32_t AppAddress);
 
-void Debug_Led_app_run(void);
-void Debug_Led_boot_run(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

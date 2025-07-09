@@ -64,6 +64,7 @@ int main(void)
 {
 	Init();
 	UART_Config();
+	Enter_Bootloader_After_Resets();
 	UART_StateMachine();
 }
 
@@ -123,26 +124,6 @@ void StartProgram(uint32_t AppAddress)
 }
 
 /* BEGIN DEBUG only functions */
-
-void Debug_Led_boot_run(void)
-{
-	LL_GPIO_SetOutputPin(LED1_RED);
-	LL_GPIO_ResetOutputPin(LED1_GREEN);
-	LL_GPIO_SetOutputPin(LED2_RED);
-	LL_GPIO_ResetOutputPin(LED2_GREEN);
-	for (volatile uint32_t i = 0; i < 10000000; i++) __NOP();
-}
-
-void Debug_Led_app_run(void)
-{
-	// LED1 Turn Red
-	LL_GPIO_SetOutputPin(LED1_GREEN);
-	LL_GPIO_ResetOutputPin(LED1_RED);
-	// LED2 Turn Red
-	LL_GPIO_SetOutputPin(LED2_GREEN);
-	LL_GPIO_ResetOutputPin(LED2_RED);
-	for (volatile uint32_t i = 0; i < 10000000; i++) __NOP();
-}
 
 /* END DEBUG only functions */
 
