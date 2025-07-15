@@ -64,7 +64,6 @@ int main(void)
 {
 	Init();
 	UART_Config();
-	Enter_Bootloader_After_Resets();
 	UART_StateMachine();
 }
 
