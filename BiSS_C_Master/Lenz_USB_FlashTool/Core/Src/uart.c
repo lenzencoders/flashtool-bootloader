@@ -23,8 +23,8 @@ volatile uint32_t uart_expected_length = 0;
 volatile uint32_t current_counter = 0;
 volatile uint32_t current_led_counter = 0;
 const uint32_t timer_period_us = 65536; // TIM7 period (16-bit)
-volatile uint32_t elapsed_global = 0;
-volatile uint32_t elapsed_led_global = 0;
+static uint32_t elapsed_global = 0;
+static uint32_t elapsed_led_global = 0;
 uint32_t overflow_count = 0;
 uint32_t overflow_led_count = 0;
 
@@ -161,12 +161,10 @@ uint8_t New_Data_Available(void)
 		uart_expected_length = uart_length + HEXLEN_ADR_CMD_CRC_LEN;
 		bytes_received = (new_cnt - dma_rx_cnt + RX_BUFFER_SIZE) % RX_BUFFER_SIZE;
 		if (bytes_received >= uart_expected_length) {
-			UART_State = UART_STATE_RECEIVE;
 			return 1;
 		}
 	} else {
 		if (queue_cnt > 0) {
-			UART_State = UART_STATE_RUNCMD;
 			return 2;
 		}
 	}
@@ -227,9 +225,6 @@ UART_State_t Execute_Command(void)
 		uint8_t *cmd_data = CommandQueue[queue_read_cnt].data;
 		
 		uint8_t page_num = 0;
-		uint32_t data_32 = 0; // UART_COMMAND_PROGRAM_CRC32
-		uint32_t crc_check = 0; // UART_COMMAND_PROGRAM_CRC32
-		// uint32_t Program_CRC32 = 0;
 
 		switch (command) {
 			case UART_COMMAND_STATE_STAY_BL:
@@ -296,14 +291,14 @@ UART_State_t Execute_Command(void)
 				if(Program_CRC32 != UartBank1.ProgramCRC32){
 					UartSetMemoryState(UART_MEMORYSTATE_FW_CHECK_CRC32_FAULT);
 				} else {
-					UartSetMemoryState(UART_MEMORYSTATE_IDLE);
+					UartSetMemoryState(UART_MEMORYSTATE_FW_CHECK_CRC32_OK);
 				}
 				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
 				queue_cnt--;
 				retry_cnt = 0;
 				break;
 				
-			case UART_COMMAND_PROGRAM_CURRENT_PAGE_CRC32:
+			case UART_COMMAND_WRITE_CURRENT_PAGE_CRC32:
 				if(cmd_data_len == 4) {
 					UartBank1.ProgramCurrentPageCRC32 = __REV(*(uint32_t*)cmd_data);
 				} else {
@@ -359,80 +354,80 @@ uint32_t Get_Elapsed_Time(uint32_t current, uint32_t previous)
 
 void Load_2K(uint8_t page_number, uint8_t *cmd_data, uint8_t cmd_data_len)
 {
-    if((page_number > 3) && (page_number < 64))
-    {
-			if(current_flash_ptr == NULL) {
-				current_flash_ptr = (uint32_t*)GetFlashPtr();
-				memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
-				bytes_filled = 0;
-			}
-			
-			if(UART_Error != UART_ERROR_NONE) {
-				current_flash_ptr = (uint32_t*)GetFlashPtr();
-				memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
-				bytes_filled = 0;					
-			}
-			
-			if((bytes_filled + cmd_data_len) > PAGE_SIZE_BYTES) {
-				UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_NULL);
-				return;
-			}
-			
-			uint16_t num_words = cmd_data_len / 4;
-			uint8_t remaining_bytes = cmd_data_len % 4;
-			
-			
-			for (uint16_t i = 0; i < num_words; i++) 
+	if((page_number > 3) && (page_number < 64))
+	{
+		if(current_flash_ptr == NULL) {
+			current_flash_ptr = (uint32_t*)GetFlashPtr();
+			memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+			bytes_filled = 0;
+		}
+		
+		if(UART_Error != UART_ERROR_NONE) {
+			current_flash_ptr = (uint32_t*)GetFlashPtr();
+			memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+			bytes_filled = 0;					
+		}
+		
+		if((bytes_filled + cmd_data_len) > PAGE_SIZE_BYTES) {
+			UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_NULL);
+			return;
+		}
+		
+		uint16_t num_words = cmd_data_len / 4;
+		uint8_t remaining_bytes = cmd_data_len % 4;
+		
+		
+		for (uint16_t i = 0; i < num_words; i++) 
+		{
+			current_flash_ptr[i] = (uint32_t)cmd_data[i*4]        | 
+													 ((uint32_t)cmd_data[i*4 + 1] << 8)  |
+													 ((uint32_t)cmd_data[i*4 + 2] << 16) |
+													 ((uint32_t)cmd_data[i*4 + 3] << 24);
+		}
+		
+		
+		if (remaining_bytes > 0) 
+		{
+			uint32_t last_word = 0;
+			for (uint8_t i = 0; i < remaining_bytes; i++) 
 			{
-				current_flash_ptr[i] = (uint32_t)cmd_data[i*4]        | 
-														 ((uint32_t)cmd_data[i*4 + 1] << 8)  |
-														 ((uint32_t)cmd_data[i*4 + 2] << 16) |
-														 ((uint32_t)cmd_data[i*4 + 3] << 24);
+					last_word |= ((uint32_t)cmd_data[num_words * 4 + i] << (i * 8));
 			}
-			
-			
-			if (remaining_bytes > 0) 
+			current_flash_ptr[num_words] = last_word;
+			num_words++;
+		}
+		
+		current_flash_ptr += num_words;
+		bytes_filled += cmd_data_len;
+		
+		if(bytes_filled >= PAGE_SIZE_BYTES) 
+		{
+			Data_CRC32 = CRC32_Calc(*GetFlashPtr(), PAGE_SIZE_BYTES);
+			if(Data_CRC32 == UartBank1.ProgramCurrentPageCRC32) 
 			{
-				uint32_t last_word = 0;
-				for (uint8_t i = 0; i < remaining_bytes; i++) 
-				{
-						last_word |= ((uint32_t)cmd_data[num_words * 4 + i] << (i * 8));
-				}
-				current_flash_ptr[num_words] = last_word;
-				num_words++;
-			}
-			
-			current_flash_ptr += num_words;
-			bytes_filled += cmd_data_len;
-			
-			if(bytes_filled >= PAGE_SIZE_BYTES) 
-			{
-				Data_CRC32 = CRC32_Calc(*GetFlashPtr(), PAGE_SIZE_BYTES);
-				if(Data_CRC32 == UartBank1.ProgramCurrentPageCRC32) 
-				{
-					FlashWritePage(page_number);
-					UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_CRC_OK);
-					
-					if (page_number == INFO_PAGE_NUM) 
-					{
-							UartBank1.ProgramCRC32 = *(uint32_t *)PROGRAM_CRC32_ADR;
-							UartBank1.ProgramDate = *(uint32_t *)PROGRAM_DATE_ADR;
-							UartBank1.ProgramVersion = *(uint32_t *)PROGRAM_VER_ADR;
-							UartBank1.ProgramLen = *(uint32_t *)PROGRAM_LENGTH_ADR;
-							UartBank1.BootloaderCRC32 = *(uint32_t *)BOOTLOADER_CRC32_ADR;
-							UartBank1.BootloaderDate = *(uint32_t *)BOOTLOADER_DATE_ADR;
-							UartBank1.BootloaderVersion = *(uint32_t *)BOOTLOADER_VER_ADR;
-							UartBank1.BootloaderLen = *(uint32_t *)BOOTLOADER_LENGTH_ADR;
-					}
-				} 
-				else 
-				{
-					UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_CRC_FAULT);
-				}
+				FlashWritePage(page_number);
+				UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_CRC_OK);
 				
-				memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
-				current_flash_ptr = NULL;
-				bytes_filled = 0;
+				if (page_number == INFO_PAGE_NUM) 
+				{
+						UartBank1.ProgramCRC32 = *(uint32_t *)PROGRAM_CRC32_ADR;
+						UartBank1.ProgramDate = *(uint32_t *)PROGRAM_DATE_ADR;
+						UartBank1.ProgramVersion = *(uint32_t *)PROGRAM_VER_ADR;
+						UartBank1.ProgramLen = *(uint32_t *)PROGRAM_LENGTH_ADR;
+						UartBank1.BootloaderCRC32 = *(uint32_t *)BOOTLOADER_CRC32_ADR;
+						UartBank1.BootloaderDate = *(uint32_t *)BOOTLOADER_DATE_ADR;
+						UartBank1.BootloaderVersion = *(uint32_t *)BOOTLOADER_VER_ADR;
+						UartBank1.BootloaderLen = *(uint32_t *)BOOTLOADER_LENGTH_ADR;
+				}
+			} 
+			else 
+			{
+				UartSetMemoryState(UART_MEMORYSTATE_FLASH_FW_CRC_FAULT);
+			}
+			
+			memset(*GetFlashPtr(), 0, PAGE_SIZE_BYTES);
+			current_flash_ptr = NULL;
+			bytes_filled = 0;
 		}
 	}
 	else 
@@ -489,8 +484,13 @@ void UART_StateMachine(void)
 	uint32_t start_counter = 0;
 	uint32_t start_led_counter = LL_TIM_GetCounter(TIM_LED);
 	uint8_t led_state = 0;
+	
+	if(GetTampFlag(TAMP_FLAGS_STAY_MAIN_FW)){
+		DeInit();
+		StartProgram(PROGRAM_ADR);
+	}
 		
-	if (GetTampFlag(TAMP_FLAGS_STAY_BL)) {
+	if(GetTampFlag(TAMP_FLAGS_STAY_BL)) {
 		flag_transition_to_fw = 0;
 		ClearTampFlag(TAMP_FLAGS_STAY_BL);
 	}
