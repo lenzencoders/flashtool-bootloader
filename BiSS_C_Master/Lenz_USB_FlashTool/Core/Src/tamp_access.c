@@ -27,9 +27,14 @@ uint32_t GetTampFlag(uint32_t flag)
     return tampFlags & flag;
 }
 
+
 void ClearTampFlag(uint32_t flag)
 {
-    SetTampFlag(LL_RTC_BKP_GetRegister(RTC, TAMP_FLAGS_REGISTER) &(~flag) );
+    LL_PWR_EnableBkUpAccess();
+    uint32_t regValue = LL_RTC_BKP_GetRegister(RTC, TAMP_FLAGS_REGISTER);
+    regValue &= ~flag;
+    LL_RTC_BKP_SetRegister(RTC, TAMP_FLAGS_REGISTER, regValue);
+    LL_PWR_DisableBkUpAccess();
 }
 
 void IncrementStartupCounter(void)
@@ -48,7 +53,7 @@ uint32_t GetStartupCounter(void)
 
 void ResetStartupCounter(void)
 {
-     LL_PWR_EnableBkUpAccess();
+    LL_PWR_EnableBkUpAccess();
     LL_RTC_BKP_SetRegister(RTC, TAMP_COUNTER_REGISTER, 0);
     LL_PWR_DisableBkUpAccess();
 }

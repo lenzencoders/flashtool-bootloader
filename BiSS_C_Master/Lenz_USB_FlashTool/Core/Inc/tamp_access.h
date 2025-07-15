@@ -24,6 +24,8 @@ extern "C" {
 #define TAMP_FLAGS_ERROROCRC32_BL				(1U << TAMP_FLAGS_ERROROCRC32_BL_Pos)
 #define TAMP_FLAGS_RDP_AA_Pos						2U
 #define TAMP_FLAGS_RDP_AA								(1U << TAMP_FLAGS_RDP_AA_Pos)
+#define TAMP_FLAGS_STAY_MAIN_FW_POS			3U
+#define TAMP_FLAGS_STAY_MAIN_FW					(1U << TAMP_FLAGS_STAY_MAIN_FW_POS)
 
 void SetTampFlag(uint32_t flag);
 
