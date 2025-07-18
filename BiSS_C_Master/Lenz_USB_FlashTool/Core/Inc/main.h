@@ -62,7 +62,7 @@ extern "C" {
 
 /* Timeout values */
 #define BOOT_WAIT_TIMEOUT    		100000UL /* 100ms */
-#define BOOT_GLOBAL_TIMEOUT  		5000000UL /* 0.5s */
+#define BOOT_GLOBAL_TIMEOUT  		10000000UL /* 10s */
 #define LED_TOGGLE_TIMEOUT			500000UL // 0.5s
 #define LED_TOGGLE_UPLOAD_TIMEOUT 100000UL // 0.1s
 
