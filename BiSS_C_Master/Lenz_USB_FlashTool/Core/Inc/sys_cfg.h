@@ -22,6 +22,9 @@ extern "C" {
 #define KEY_ADR							 0x080027E0U
 #define KEY_LENGTH           8 						/*0x1AU x 32bit*/
 
+#define COUNTER_OF_RESETS_ADR	        0x08008000U
+#define COUNTER_OF_RESETS_ADR_LENGTH  8U
+#define PAGE_COUNTER_OF_RESETS_ADR		16U 
 
 #define MEMORY_BASE_SHIFT							0x2000U
 #define MEMORY_BASE_ADR               (0x08000000U + MEMORY_BASE_SHIFT)          

@@ -46,6 +46,9 @@ void FlashWriteDevID(uint32_t DevID_H, uint32_t DevID_L);
 void FlashSetRDP(void);
 Flash_RDP_OptByte_t CheckRDPOptBbyte(void);
 
+void FlashWriteCounterOfResets(uint32_t Counter_of_Resets);
+uint32_t ReadCounterOfResets(void);
+
 #ifdef __cplusplus
 }
 #endif

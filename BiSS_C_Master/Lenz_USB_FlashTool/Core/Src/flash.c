@@ -98,6 +98,20 @@ void FlashWriteDevID(uint32_t DevID_H, uint32_t DevID_L) {
 	FlashLock();
 }
 
+void FlashWriteCounterOfResets(uint32_t Counter_of_Resets)
+{
+	FlashUnlockEraseProg(PAGE_COUNTER_OF_RESETS_ADR);
+	__disable_irq();
+	*(__IO uint32_t*)COUNTER_OF_RESETS_ADR = Counter_of_Resets;
+	__enable_irq();
+	FlashWait();
+	FlashLock();
+}
+
+uint32_t ReadCounterOfResets(void) {
+    return *(__IO uint32_t*)COUNTER_OF_RESETS_ADR;
+}
+
 Flash_RDP_OptByte_t CheckRDPOptBbyte(void){
 	if ((FLASH->OPTR&0xFF) == 0xAA ) {
 		return RDP_AA;
