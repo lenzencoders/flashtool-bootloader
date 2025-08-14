@@ -320,6 +320,23 @@ UART_State_t Execute_Command(void)
 				queue_cnt--;
 				retry_cnt = 0;
 				break;
+			
+			case UART_COMMAND_READ_PROGRAM_VER:
+				UART_TX.cmd = UART_COMMAND_READ_PROGRAM_VER;
+				UART_TX.len = cmd_data_len;
+				UART_TX.adr_h = 0; 
+				UART_TX.adr_l = 0;
+				uint32_t *value_ptr = (uint32_t*)(PROGRAM_VER_ADR);
+				uint32_t value = *value_ptr;
+				UART_TX.Buf[3] = (value >> 0) & 0xFF;
+				UART_TX.Buf[2] = (value >> 8) & 0xFF;
+				UART_TX.Buf[1] = (value >> 16) & 0xFF;
+				UART_TX.Buf[0] = (value >> 24) & 0xFF;
+				UART_Transmit(&UART_TX);
+				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
+				queue_cnt--;
+				retry_cnt = 0;
+				break;
 		}
 	}
 	return ret;
