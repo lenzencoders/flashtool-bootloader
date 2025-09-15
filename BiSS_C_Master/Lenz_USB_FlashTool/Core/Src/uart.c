@@ -498,6 +498,26 @@ void Toggle_LEDs(uint8_t state)
 	}
 }
 
+void check_fw_crc32(void)
+{
+	
+	if (UartBank1.ProgramCRC32 == 0xFFFFFFFF) {
+		flag_transition_to_fw = 0;
+		return;
+	}
+    
+	if ((UartBank1.ProgramLen < VALID_PROGRAM_LEN_THRESHOLD) || 
+		(UartBank1.ProgramLen > MAX_PROGRAM_LENGTH_PAGES)) {
+		flag_transition_to_fw = 0;
+		return;
+	}
+	
+	uint32_t calculated_crc = Calculate_Program_CRC();
+	if (calculated_crc != UartBank1.ProgramCRC32){
+		flag_transition_to_fw = 0;
+	}
+}
+
 void UART_StateMachine(void)
 {
 	/* Enable DMA requests for LPUART1 */

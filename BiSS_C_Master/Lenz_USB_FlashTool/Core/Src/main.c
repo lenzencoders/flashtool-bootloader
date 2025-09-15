@@ -64,6 +64,7 @@ int main(void)
 {
 	Init();
 	UART_Config();
+	check_fw_crc32();
 	UART_StateMachine();
 }
 

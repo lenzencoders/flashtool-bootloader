@@ -47,7 +47,10 @@ extern "C" {
 #define BOOTLOADER_LENGTH_ADR         (MEMORY_BASE_ADR + 28U)    // uint16_t BootloaderLen:8 (offset 28, 2 bytes)
 
 #define PROGRAM_CURPAGE_CRC_ADR       (MEMORY_BASE_ADR + 32U)    // uint32_t ProgramCurrentPageCRC32 (offset 32)
-#define BOOTLOADER_CURPAGE_CRC_ADR    (MEMORY_BASE_ADR + 36U)    // uint32_t BootloaderCurrentPageCRC32 (offset 36)      
+#define BOOTLOADER_CURPAGE_CRC_ADR    (MEMORY_BASE_ADR + 36U)    // uint32_t BootloaderCurrentPageCRC32 (offset 36)     
+
+#define MAX_PROGRAM_LENGTH_PAGES      0x100U
+#define VALID_PROGRAM_LEN_THRESHOLD   1U
 
 #ifdef __cplusplus
 }

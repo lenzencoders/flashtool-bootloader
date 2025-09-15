@@ -111,6 +111,7 @@ __STATIC_INLINE MemoryState_t UartGetMemoryState(void) {
 
 void UART_Config(void);
 void UART_StateMachine(void);
+void check_fw_crc32(void);
 
 /* END functions prototypes */
 
