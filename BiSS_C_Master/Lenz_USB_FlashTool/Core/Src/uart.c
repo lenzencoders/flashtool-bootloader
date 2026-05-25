@@ -272,8 +272,10 @@ UART_State_t Execute_Command(void)
 				break;
 				
 			case UART_COMMAND_RUN_PROGRAM:
-				DeInit();
-				StartProgram(PROGRAM_ADR);
+				if(UartBank1.ProgramVersion != 0xFFFFFFFF){
+					DeInit();
+					StartProgram(PROGRAM_ADR);
+				}
 				queue_read_cnt = (queue_read_cnt + 1U) % QUEUE_SIZE;
 				queue_cnt--;
 				retry_cnt = 0;
